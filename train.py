@@ -8,7 +8,7 @@ import gymnasium as gym
 import os
 
 
-def train(n_eps=200_000):
+def train(n_eps=500_000):
     envname = "Humanoid-v5"
     # making and assigning folders
     dirs = ["model", "log", "env"]
@@ -25,7 +25,7 @@ def train(n_eps=200_000):
 
     # the rest will be defaults for now
     # TODO: start tuning some hyperparams
-    model = PPO("MlpPolicy", env=train_env)
+    model = PPO("MlpPolicy", env=train_env, gamma=0.995, ent_coef=5e-3)
     model.learn(n_eps, eval_callback, progress_bar=True)
 
     # save train env to use its VecNormalize data later
