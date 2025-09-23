@@ -8,7 +8,14 @@ import gymnasium as gym
 import os
 
 
-def train(n_eps=5_000_000):
+def decay(initial, final):
+    def step(progress_remaining):
+        return max(final, initial * progress_remaining)
+
+    return step
+
+
+def train(n_eps=10_000_000):
     envname = "Humanoid-v5"
     # making and assigning folders
     dirs = ["model", "log", "env"]
@@ -24,14 +31,16 @@ def train(n_eps=5_000_000):
     )
 
     # the rest will be defaults for now
-    # TODO: start tuning some hyperparams
+    # previous training run got us very limited gait
+    # adding more ent_coef, implementing learning rate decay, training for longer
     model = PPO(
         "MlpPolicy",
         env=train_env,
         gamma=0.999,
-        ent_coef=5e-3,
+        ent_coef=1e-2,
         batch_size=512,
         n_steps=4096,
+        learning_rate=decay(3e-4, 3e-5),
     )
     model.learn(n_eps, eval_callback, progress_bar=True)
 
