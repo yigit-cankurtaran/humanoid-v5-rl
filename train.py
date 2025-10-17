@@ -15,7 +15,15 @@ def decay(initial, final):
     return step
 
 
-def train(n_eps=10_000_000):
+def sync_normalization(train_env: VecNormalize, eval_env: VecNormalize) -> None:
+    # making sure eval matches training
+    eval_env.obs_rms = train_env.obs_rms
+    eval_env.ret_rms = train_env.ret_rms
+    eval_env.clip_obs = train_env.clip_obs
+    eval_env.clip_reward = train_env.clip_reward
+
+
+def train(n_eps=100_000):
     envname = "Humanoid-v5"
     # making and assigning folders
     dirs = ["model", "log", "env"]
@@ -30,6 +38,7 @@ def train(n_eps=10_000_000):
         training=False,
         norm_reward=False,
     )
+    sync_normalization(train_env, eval_env)
 
     eval_callback = EvalCallback(
         eval_env, log_path=log_path, best_model_save_path=model_path
