@@ -24,7 +24,12 @@ def train(n_eps=10_000_000):
     model_path, log_path, _ = dirs
 
     train_env = VecNormalize(make_vec_env(envname, 4))
-    eval_env = VecNormalize(DummyVecEnv([lambda: Monitor(gym.make(envname))]))
+    # VecNormalize defaults to training=True and norm_reward=True, fixing that
+    eval_env = VecNormalize(
+        DummyVecEnv([lambda: Monitor(gym.make(envname))]),
+        training=False,
+        norm_reward=False,
+    )
 
     eval_callback = EvalCallback(
         eval_env, log_path=log_path, best_model_save_path=model_path
