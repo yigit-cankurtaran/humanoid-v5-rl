@@ -9,8 +9,6 @@ Usage:
     python tune_basic.py --trials 5 --timesteps 100000
 """
 
-from __future__ import annotations
-
 import argparse
 import gymnasium as gym
 import optuna
@@ -56,7 +54,9 @@ def objective(trial: Trial, env_id: str, timesteps: int) -> float:
     eval_env.obs_rms = train_env.obs_rms
     eval_env.ret_rms = train_env.ret_rms
 
-    mean_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes=5, return_episode_rewards=False)
+    mean_reward, _ = evaluate_policy(
+        model, eval_env, n_eval_episodes=5, return_episode_rewards=False
+    )
 
     train_env.close()
     eval_env.close()
@@ -66,13 +66,22 @@ def objective(trial: Trial, env_id: str, timesteps: int) -> float:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Basic Optuna example for PPO")
-    parser.add_argument("--trials", type=int, default=5, help="How many Optuna trials to run")
-    parser.add_argument("--timesteps", type=int, default=100_000, help="Training timesteps per trial")
-    parser.add_argument("--env-id", type=str, default="Humanoid-v5", help="Gymnasium environment id")
+    parser.add_argument(
+        "--trials", type=int, default=5, help="How many Optuna trials to run"
+    )
+    parser.add_argument(
+        "--timesteps", type=int, default=100_000, help="Training timesteps per trial"
+    )
+    parser.add_argument(
+        "--env-id", type=str, default="Humanoid-v5", help="Gymnasium environment id"
+    )
     args = parser.parse_args()
 
     study = optuna.create_study(direction="maximize")
-    study.optimize(lambda trial: objective(trial, args.env_id, args.timesteps), n_trials=args.trials)
+    study.optimize(
+        lambda trial: objective(trial, args.env_id, args.timesteps),
+        n_trials=args.trials,
+    )
 
     print("Best trial:", study.best_trial.number)
     print("Best reward:", study.best_trial.value)
