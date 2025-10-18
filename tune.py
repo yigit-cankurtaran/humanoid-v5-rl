@@ -105,6 +105,7 @@ def sample_hyperparameters(trial: Trial, num_envs: int) -> Dict[str, float]:
         "ent_coef": ent_coef,
         "vf_coef": vf_coef,
         "lr_initial": lr_initial,
+        "lr_decay_ratio": lr_decay_ratio,
         "lr_final": lr_initial * lr_decay_ratio,
     }
 
@@ -116,7 +117,15 @@ def build_model(
     train_env: VecNormalize, params: Dict[str, float], seed: Optional[int]
 ) -> PPO:
     """Instantiate PPO with the sampled hyperparameters."""
-    lr_schedule = decay(params["lr_initial"], params["lr_final"])
+    lr_initial = params["lr_initial"]
+    if "lr_final" in params:
+        lr_final = params["lr_final"]
+    else:
+        # When using study.best_params() only sampled values are present, so
+        # reconstruct the final LR from the decay ratio.
+        lr_decay_ratio = params.get("lr_decay_ratio", 0.1)
+        lr_final = lr_initial * lr_decay_ratio
+    lr_schedule = decay(lr_initial, lr_final)
     return PPO(
         "MlpPolicy",
         env=train_env,
@@ -237,7 +246,11 @@ def retrain_with_best(
     eval_env = build_eval_env(args.env_id, args.seed)
     sync_normalization(train_env, eval_env)
 
-    model = build_model(train_env, best_params, args.seed)
+    retrain_params = dict(best_params)
+    retrain_params.setdefault(
+        "lr_final", retrain_params["lr_initial"] * retrain_params.get("lr_decay_ratio", 0.1)
+    )
+    model = build_model(train_env, retrain_params, args.seed)
 
     os.makedirs(args.final_model_dir, exist_ok=True)
     os.makedirs(args.final_log_dir, exist_ok=True)
