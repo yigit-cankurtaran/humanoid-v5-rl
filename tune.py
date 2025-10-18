@@ -1,10 +1,5 @@
 """Optuna-powered PPO hyperparameter search entry point.
 
-This script leaves the production `train.py` untouched and focuses purely on
-experimenting with hyperparameters. When you import `train.py` nothing runs by
-side effect, so we can freely reuse the normalization helpers that already
-exist there.
-
 Typical usage:
     python tune.py --trials 20 --timesteps 200000
 
@@ -66,6 +61,7 @@ def build_train_env(env_id: str, num_envs: int, seed: Optional[int]) -> VecNorma
 
 def build_eval_env(env_id: str, seed: Optional[int]) -> VecNormalize:
     """Create an evaluation environment that mirrors the training statistics."""
+
     def _make_env() -> Monitor:
         env = gym.make(env_id)
         env.reset(seed=seed)
@@ -116,7 +112,9 @@ def sample_hyperparameters(trial: Trial, num_envs: int) -> Dict[str, float]:
     return params
 
 
-def build_model(train_env: VecNormalize, params: Dict[str, float], seed: Optional[int]) -> PPO:
+def build_model(
+    train_env: VecNormalize, params: Dict[str, float], seed: Optional[int]
+) -> PPO:
     """Instantiate PPO with the sampled hyperparameters."""
     lr_schedule = decay(params["lr_initial"], params["lr_final"])
     return PPO(
@@ -161,7 +159,11 @@ def objective(trial: Trial, config: ObjectiveConfig) -> float:
         verbose=0,
     )
 
-    model.learn(total_timesteps=config.total_timesteps, callback=eval_callback, progress_bar=False)
+    model.learn(
+        total_timesteps=config.total_timesteps,
+        callback=eval_callback,
+        progress_bar=False,
+    )
 
     # After learning the training statistics changed, so keep the eval env synced
     # before computing the final score we will hand back to Optuna.
@@ -212,7 +214,9 @@ def run_study(args: argparse.Namespace) -> optuna.Study:
     os.makedirs(args.model_root, exist_ok=True)
     os.makedirs(args.log_root, exist_ok=True)
 
-    study.optimize(partial(objective, config=config), n_trials=args.trials, gc_after_trial=True)
+    study.optimize(
+        partial(objective, config=config), n_trials=args.trials, gc_after_trial=True
+    )
     return study
 
 
@@ -249,7 +253,11 @@ def retrain_with_best(
         verbose=1,
     )
 
-    model.learn(total_timesteps=args.retrain_timesteps, callback=eval_callback, progress_bar=True)
+    model.learn(
+        total_timesteps=args.retrain_timesteps,
+        callback=eval_callback,
+        progress_bar=True,
+    )
 
     sync_normalization(train_env, eval_env)
     train_env.save(args.final_env_path)
@@ -258,27 +266,101 @@ def retrain_with_best(
     eval_env.close()
 
     print("Retrain finished. Best checkpoint lives at:")
-    print(f"  model: {os.path.join(args.final_model_dir, 'best_model.zip')}\n  vec normalize: {args.final_env_path}")
+    print(
+        f"  model: {os.path.join(args.final_model_dir, 'best_model.zip')}\n  vec normalize: {args.final_env_path}"
+    )
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Hyperparameter tuning for humanoid PPO with Optuna.")
-    parser.add_argument("--trials", type=int, default=20, help="Number of Optuna trials to run")
-    parser.add_argument("--timesteps", type=int, default=DEFAULT_TOTAL_TIMESTEPS, help="Training timesteps per trial")
-    parser.add_argument("--env-id", type=str, default=DEFAULT_ENV_ID, help="Gymnasium environment id")
-    parser.add_argument("--num-envs", type=int, default=DEFAULT_NUM_ENVS, help="Vectorized environment count")
-    parser.add_argument("--eval-episodes", type=int, default=DEFAULT_EVAL_EPISODES, help="Episodes per evaluation pass")
-    parser.add_argument("--study-name", type=str, default=DEFAULT_STUDY_NAME, help="Optuna study name")
-    parser.add_argument("--storage", type=str, default=None, help="Optuna storage URL (e.g. sqlite:///optuna.db)")
-    parser.add_argument("--seed", type=int, default=None, help="Optional random seed for reproducibility")
-    parser.add_argument("--model-root", type=str, default=DEFAULT_MODEL_ROOT, help="Directory to store per-trial models")
-    parser.add_argument("--log-root", type=str, default=DEFAULT_LOG_ROOT, help="Directory to store evaluation logs")
-    parser.add_argument("--save-params", type=str, default=None, help="Optional path to dump best parameters as JSON")
-    parser.add_argument("--retrain", action="store_true", help="Retrain a policy with the best parameters once tuning completes")
-    parser.add_argument("--retrain-timesteps", type=int, default=500_000, help="Timesteps for the optional retrain run")
-    parser.add_argument("--final-model-dir", type=str, default=os.path.join("model", "optuna_best"), help="Destination directory for the retrained best model")
-    parser.add_argument("--final-log-dir", type=str, default=os.path.join("log", "optuna_best"), help="Destination eval log dir for the retrained best model")
-    parser.add_argument("--final-env-path", type=str, default=DEFAULT_ENV_SAVE, help="Where to store VecNormalize stats for the retrained best model")
+    parser = argparse.ArgumentParser(
+        description="Hyperparameter tuning for humanoid PPO with Optuna."
+    )
+    parser.add_argument(
+        "--trials", type=int, default=20, help="Number of Optuna trials to run"
+    )
+    parser.add_argument(
+        "--timesteps",
+        type=int,
+        default=DEFAULT_TOTAL_TIMESTEPS,
+        help="Training timesteps per trial",
+    )
+    parser.add_argument(
+        "--env-id", type=str, default=DEFAULT_ENV_ID, help="Gymnasium environment id"
+    )
+    parser.add_argument(
+        "--num-envs",
+        type=int,
+        default=DEFAULT_NUM_ENVS,
+        help="Vectorized environment count",
+    )
+    parser.add_argument(
+        "--eval-episodes",
+        type=int,
+        default=DEFAULT_EVAL_EPISODES,
+        help="Episodes per evaluation pass",
+    )
+    parser.add_argument(
+        "--study-name", type=str, default=DEFAULT_STUDY_NAME, help="Optuna study name"
+    )
+    parser.add_argument(
+        "--storage",
+        type=str,
+        default=None,
+        help="Optuna storage URL (e.g. sqlite:///optuna.db)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional random seed for reproducibility",
+    )
+    parser.add_argument(
+        "--model-root",
+        type=str,
+        default=DEFAULT_MODEL_ROOT,
+        help="Directory to store per-trial models",
+    )
+    parser.add_argument(
+        "--log-root",
+        type=str,
+        default=DEFAULT_LOG_ROOT,
+        help="Directory to store evaluation logs",
+    )
+    parser.add_argument(
+        "--save-params",
+        type=str,
+        default=None,
+        help="Optional path to dump best parameters as JSON",
+    )
+    parser.add_argument(
+        "--retrain",
+        action="store_true",
+        help="Retrain a policy with the best parameters once tuning completes",
+    )
+    parser.add_argument(
+        "--retrain-timesteps",
+        type=int,
+        default=500_000,
+        help="Timesteps for the optional retrain run",
+    )
+    parser.add_argument(
+        "--final-model-dir",
+        type=str,
+        default=os.path.join("model", "optuna_best"),
+        help="Destination directory for the retrained best model",
+    )
+    parser.add_argument(
+        "--final-log-dir",
+        type=str,
+        default=os.path.join("log", "optuna_best"),
+        help="Destination eval log dir for the retrained best model",
+    )
+    parser.add_argument(
+        "--final-env-path",
+        type=str,
+        default=DEFAULT_ENV_SAVE,
+        help="Where to store VecNormalize stats for the retrained best model",
+    )
     return parser.parse_args()
 
 
@@ -296,7 +378,9 @@ def main() -> None:
 
     if args.retrain:
         retrain_with_best(study.best_params, args)
-        print("Retrain artifacts saved. Update watch.py paths if you want to visualise the tuned policy.")
+        print(
+            "Retrain artifacts saved. Update watch.py paths if you want to visualise the tuned policy."
+        )
 
 
 if __name__ == "__main__":
