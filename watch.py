@@ -5,7 +5,11 @@ import gymnasium as gym
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 
-def watch(model_path="./model/best_model.zip", env_path="./env/train_env.pkl", n_eps=5):
+def watch(
+    model_path="./model/optuna_best/best_model.zip",
+    env_path="./env/train_env.pkl",
+    n_eps=5,
+):
     watch_env = DummyVecEnv(
         [lambda: Monitor(gym.make("Humanoid-v5", render_mode="human"))]
     )
