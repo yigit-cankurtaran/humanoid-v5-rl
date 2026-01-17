@@ -9,7 +9,7 @@ import argparse
 def watch(
     model_path="./model/best/best_model.zip",
     env_path="./env/train_env.pkl",
-    env_id="Humanoid-v4",
+    env_id="Humanoid-v5",
     n_eps=5,
 ):
     watch_env = DummyVecEnv(
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-path", default="./model/best/best_model.zip")
     parser.add_argument("--env-path", default="./env/train_env.pkl")
-    parser.add_argument("--env-id", default="Humanoid-v4")
+    parser.add_argument("--env-id", default="Humanoid-v5")
     parser.add_argument("--n-eps", type=int, default=5)
     args = parser.parse_args()
     watch(

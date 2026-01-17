@@ -15,14 +15,46 @@ def in_colab() -> bool:
         return False
 
 
-def install_deps(gymnasium_version: str, mujoco_version: str) -> None:
+def install_deps(
+    sb3_version: str,
+    gymnasium_version: str,
+    mujoco_version: str,
+    upgrade_latest: bool,
+) -> None:
+    if upgrade_latest:
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-q",
+                "-U",
+                "stable-baselines3",
+                "gymnasium[mujoco]",
+                "mujoco",
+            ],
+            check=True,
+        )
+        return
+
     pkgs = [
-        "stable-baselines3==2.3.2",
+        f"stable-baselines3=={sb3_version}",
         f"gymnasium[mujoco]=={gymnasium_version}",
     ]
     if mujoco_version:
         pkgs.append(f"mujoco=={mujoco_version}")
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", *pkgs], check=True)
+
+
+def assert_env_available(env_id: str) -> None:
+    import gymnasium as gym
+
+    if env_id not in gym.envs.registry:
+        available = sorted([k for k in gym.envs.registry.keys() if k.startswith("Humanoid-")])
+        raise SystemExit(
+            f"{env_id} is not available. Installed Humanoid envs: {available}"
+        )
 
 
 def zip_artifacts(repo_root: str, zip_path: str) -> None:
@@ -45,9 +77,11 @@ def main() -> int:
     parser.add_argument("--eval-freq", type=int, default=50_000)
     parser.add_argument("--n-eval-episodes", type=int, default=10)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--env-id", default="Humanoid-v4")
+    parser.add_argument("--env-id", default="Humanoid-v5")
+    parser.add_argument("--sb3-version", default="2.3.2")
     parser.add_argument("--gymnasium-version", default="0.29.1")
     parser.add_argument("--mujoco-version", default="3.1.1")
+    parser.add_argument("--upgrade-latest", action="store_true")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--drive-dir", default="")
     args = parser.parse_args()
@@ -61,7 +95,13 @@ def main() -> int:
     os.chdir(repo_root)
 
     if not args.skip_install:
-        install_deps(args.gymnasium_version, args.mujoco_version)
+        install_deps(
+            args.sb3_version,
+            args.gymnasium_version,
+            args.mujoco_version,
+            args.upgrade_latest,
+        )
+    assert_env_available(args.env_id)
 
     cmd = [
         sys.executable,

@@ -37,7 +37,7 @@ class VecNormalizeEvalCallback(EvalCallback):
 
 
 def train(
-    env_id: str = "Humanoid-v4",
+    env_id: str = "Humanoid-v5",
     total_timesteps: int = 5_000_000,
     n_envs: int = 8,
     eval_freq: int = 50_000,
@@ -112,7 +112,7 @@ def train(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env-id", default="Humanoid-v4")
+    parser.add_argument("--env-id", default="Humanoid-v5")
     parser.add_argument("--total-timesteps", type=int, default=5_000_000)
     parser.add_argument("--n-envs", type=int, default=8)
     parser.add_argument("--eval-freq", type=int, default=50_000)
