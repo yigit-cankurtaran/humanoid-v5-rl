@@ -37,13 +37,13 @@ class VecNormalizeEvalCallback(EvalCallback):
 
 
 def train(
+    env_id: str = "Humanoid-v4",
     total_timesteps: int = 5_000_000,
     n_envs: int = 8,
     eval_freq: int = 50_000,
     n_eval_episodes: int = 10,
     seed: Optional[int] = 1,
 ):
-    envname = "Humanoid-v4"
     # making and assigning folders
     dirs = ["model", "log", "env"]
     for name in dirs:
@@ -51,13 +51,13 @@ def train(
     model_path, log_path, _ = dirs
 
     train_env = VecNormalize(
-        make_vec_env(envname, n_envs, seed=seed),
+        make_vec_env(env_id, n_envs, seed=seed),
         gamma=0.99,
         clip_obs=10.0,
     )
     # VecNormalize defaults to training=True and norm_reward=True, fixing that
     eval_env = VecNormalize(
-        DummyVecEnv([lambda: Monitor(gym.make(envname))]),
+        DummyVecEnv([lambda: Monitor(gym.make(env_id))]),
         training=False,
         norm_reward=False,
     )
@@ -112,6 +112,7 @@ def train(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--env-id", default="Humanoid-v4")
     parser.add_argument("--total-timesteps", type=int, default=5_000_000)
     parser.add_argument("--n-envs", type=int, default=8)
     parser.add_argument("--eval-freq", type=int, default=50_000)
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=1)
     args = parser.parse_args()
     train(
+        env_id=args.env_id,
         total_timesteps=args.total_timesteps,
         n_envs=args.n_envs,
         eval_freq=args.eval_freq,

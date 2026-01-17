@@ -15,20 +15,14 @@ def in_colab() -> bool:
         return False
 
 
-def install_deps() -> None:
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "-q",
-            "stable-baselines3==2.3.2",
-            "gymnasium[mujoco]==0.29.1",
-            "mujoco==3.1.1",
-        ],
-        check=True,
-    )
+def install_deps(gymnasium_version: str, mujoco_version: str) -> None:
+    pkgs = [
+        "stable-baselines3==2.3.2",
+        f"gymnasium[mujoco]=={gymnasium_version}",
+    ]
+    if mujoco_version:
+        pkgs.append(f"mujoco=={mujoco_version}")
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *pkgs], check=True)
 
 
 def zip_artifacts(repo_root: str, zip_path: str) -> None:
@@ -51,6 +45,9 @@ def main() -> int:
     parser.add_argument("--eval-freq", type=int, default=50_000)
     parser.add_argument("--n-eval-episodes", type=int, default=10)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--env-id", default="Humanoid-v4")
+    parser.add_argument("--gymnasium-version", default="0.29.1")
+    parser.add_argument("--mujoco-version", default="3.1.1")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--drive-dir", default="")
     args = parser.parse_args()
@@ -64,7 +61,7 @@ def main() -> int:
     os.chdir(repo_root)
 
     if not args.skip_install:
-        install_deps()
+        install_deps(args.gymnasium_version, args.mujoco_version)
 
     cmd = [
         sys.executable,
@@ -79,6 +76,8 @@ def main() -> int:
         str(args.n_eval_episodes),
         "--seed",
         str(args.seed),
+        "--env-id",
+        str(args.env_id),
     ]
     subprocess.run(cmd, check=True)
 
