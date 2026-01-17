@@ -3,15 +3,16 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 import gymnasium as gym
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+import argparse
 
 
 def watch(
-    model_path="./model/optuna_best/best_model.zip",
+    model_path="./model/best/best_model.zip",
     env_path="./env/train_env.pkl",
     n_eps=5,
 ):
     watch_env = DummyVecEnv(
-        [lambda: Monitor(gym.make("Humanoid-v5", render_mode="human"))]
+        [lambda: Monitor(gym.make("Humanoid-v4", render_mode="human"))]
     )
     watch_env = VecNormalize.load(env_path, watch_env)
     watch_env.norm_reward = False
@@ -30,4 +31,9 @@ def watch(
 
 
 if __name__ == "__main__":
-    watch()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-path", default="./model/best/best_model.zip")
+    parser.add_argument("--env-path", default="./env/train_env.pkl")
+    parser.add_argument("--n-eps", type=int, default=5)
+    args = parser.parse_args()
+    watch(model_path=args.model_path, env_path=args.env_path, n_eps=args.n_eps)
